@@ -1,0 +1,133 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "srvcs-crossproduct",
+    "description": "",
+    "license": {
+      "name": "Apache-2.0",
+      "identifier": "Apache-2.0"
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "tags": [],
+        "summary": "`GET /` — service identity (srvcs service standard).",
+        "operationId": "index",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Info"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [],
+        "summary": "`POST /` — the 3D cross product `a × b`.",
+        "description": "This service owns the *control flow* but delegates every arithmetic step to\nits float primitives, exactly as specified. For `a = [a0, a1, a2]` and\n`b = [b0, b1, b2]`:\n\n- `cx = floatsubtract(floatmultiply(a1, b2), floatmultiply(a2, b1))`\n- `cy = floatsubtract(floatmultiply(a2, b0), floatmultiply(a0, b2))`\n- `cz = floatsubtract(floatmultiply(a0, b1), floatmultiply(a1, b0))`\n\nand `result = [cx, cy, cz]`.\n\nValidation is not handled here for the *elements*: this service never calls\n`srvcs-isnumber` directly. If an element is not a number a float primitive\nrejects it with `422` and that is forwarded. Vectors must each have length\n`3`; otherwise this service returns `422` itself.",
+        "operationId": "evaluate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrossProductResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "a vector is not length 3, or a dependency rejected an element (forwarded)"
+          },
+          "500": {
+            "description": "a dependency returned a malformed result"
+          },
+          "503": {
+            "description": "a dependency is unavailable"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CrossProductResponse": {
+        "type": "object",
+        "required": [
+          "a",
+          "b",
+          "result"
+        ],
+        "properties": {
+          "a": {
+            "type": "object"
+          },
+          "b": {
+            "type": "object"
+          },
+          "result": {
+            "type": "object",
+            "description": "The cross product `a × b` as `[cx, cy, cz]`."
+          }
+        }
+      },
+      "EvalRequest": {
+        "type": "object",
+        "required": [
+          "a",
+          "b"
+        ],
+        "properties": {
+          "a": {
+            "type": "object",
+            "description": "The first 3D vector `[x, y, z]`. Each element is forwarded verbatim to\nthe float primitives."
+          },
+          "b": {
+            "type": "object",
+            "description": "The second 3D vector `[x, y, z]`."
+          }
+        }
+      },
+      "Info": {
+        "type": "object",
+        "required": [
+          "service",
+          "concern",
+          "depends_on"
+        ],
+        "properties": {
+          "concern": {
+            "type": "string"
+          },
+          "depends_on": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "service": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
